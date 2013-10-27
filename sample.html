@@ -10,19 +10,27 @@
             }
         </style>
     </head>
-    <body>
-        <div id="frame">
+    <body id="content">
             <canvas></canvas>
-        </div>
         <script>
             $(function(){
                 $("canvas").attr({height:$("#content").height()});
-                $("canvas").attr({width:$("#content").width});
+                $("canvas").attr({width:$("#content").width()});
 
                 var centerX = $("canvas").width()/2;
                 var centerY = $("canvas").height()/2;
 
                 draw(centerX, centerY, 10);
+
+                Leap.loop(function(frame){
+                    if(frame.fingers[0]){
+                        var x = frame.fingers[0].tipPosition[0];
+                        var y = frame.fingers[0].tipPosition[1];
+                        var z = frame.fingers[0].tipPosition[2];
+
+                        draw(x + centerX, $("canvas").height()-y, z);
+                    }
+                });
 
                 function draw(x, y, z){
                     z = z < 10 ? 10 : z;
