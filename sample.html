@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <script src="http://js.leapmotion.com/0.2.0/leap.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <style type="text/css">
+            body {
+                width: 100%;
+                height: 100%;
+                position: fixed;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="frame">
+            <canvas></canvas>
+        </div>
+        <script>
+            $(function(){
+                $("canvas").attr({height:$("#content").height()});
+                $("canvas").attr({width:$("#content").width});
+
+                var centerX = $("canvas").width()/2;
+                var centerY = $("canvas").height()/2;
+
+                draw(centerX, centerY, 10);
+
+                function draw(x, y, z){
+                    z = z < 10 ? 10 : z;
+                    var canvas = $('canvas')[0];
+                    var context = canvas.getContext('2d');
+                    context.clearRect(0, 0, $("canvas").width(), $("canvas").height());
+                    context.beginPath();
+                    context.arc(x, y, z, 0, Math.PI*2, false);
+                    context.stroke();
+                };
+            });
+        </script>
+    </body>
+</html>
