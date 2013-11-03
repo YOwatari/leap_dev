@@ -13,7 +13,7 @@ var io = require('socket.io').listen(server);
 
 // all environments
 app.configure(function () {
-	app.set('port', process.env.PORT || 3000);
+	app.set('port', process.env.PORT);
 	app.set('views', path.join(__dirname, 'views'));
 	app.set('view engine', 'ejs');
 	app.use(express.favicon());
@@ -48,5 +48,5 @@ app.get('/', function (req, res) {
 });
 
 if (!module.parent) {
-	server.listen(app.get('port'));
+	server.listen(app.get('port'), process.env.IP);
 }
