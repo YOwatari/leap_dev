@@ -43,7 +43,7 @@ io.sockets.on('connection', function (client) {
 
 app.get('/', function (req, res) {
 	res.render('index', {
-		title: 'sketch!'
+		title: 'leap_dev'
 	});
 });
 
