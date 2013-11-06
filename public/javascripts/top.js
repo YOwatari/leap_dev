@@ -73,7 +73,79 @@ $(function () {
 		}
 	};
 
+	// Ring
+	var Ring = function (r, c) {
+		this.x = centerX;
+		this.y = centerY;
+		this.r = r;
+		this.c = c;
+	};
+	Ring.prototype = {
+		draw: function () {
+			$canvas.drawArc({
+				strokeStyle: r1.collision(f1) ? "red" : this.c,
+				strokeWidth: 4,
+				x: this.x/scale, y: this.y/scale,
+				radius: this.r
+			});
+		},
+		collision: function (target) {
+			var dx = target.x - this.x;
+			var dy = target.y - this.y;
+			var distance = Math.sqrt(dx*dx + dy*dy);
+			var surface = this.r + target.r;
+
+			return distance < surface;
+		}
+	};
+
+	var Arrow = function (direction) {
+		this.x = 0;
+		this.y = canvasY/4;
+		this.c = "blue";
+		if (direction == "right") {
+			this.r = 45;
+			this.m = 10
+		} else {
+			this.r = -45;
+			this.m = -10;
+		};
+	};
+	Arrow.prototype = {
+		draw: function () {
+			$canvas.drawRect({
+				fillStyle: this.c,
+				x: (this.x - canvasX*0.25/4)/scale,
+				y: (this.y - canvasX*0.25/4)/scale,
+				width: canvasX/scale*0.25, height: canvasY/scale*0.1,
+				rotate: this.r,
+			})
+			.drawRect({
+				fillStyle: this.c,
+				x: (this.x - canvasX*0.25/4)/scale,
+				y: (this.y + canvasX*0.25/4)/scale,
+				width: canvasX/scale*0.25, height: canvasY/scale*0.1,
+				rotate: -this.r,
+			});
+
+			this.update();
+		},
+		update: function () {
+			this.x = this.x + this.m;
+
+			if (this.m > 0) {
+				if (this.x > canvasX + canvasX*0.25)
+				this.x = - canvasX*0.25;
+			} else {
+				if (this.x < -canvasX*0.25)
+				this.x = canvasX + canvasX*0.25;
+			}
+		}
+	};
+
 	var f1 = new Finger();
+	var r1 = new Ring(8, "blue");
+	var a1 = new Arrow("right");
 
 	// Laep Motion
 	Leap.loop(function (frame) {
@@ -83,39 +155,12 @@ $(function () {
 		}
 	});
 
-	// circle
-	var Circle = function (r, c) {
-		this.x = centerX;
-		this.y = centerY;
-		this.r = r;
-		this.c = c;
-	}
-	Circle.prototype = {
-		draw: function () {
-			$canvas.drawArc({
-				strokeStyle: this.c,
-				strokeWidth: 4,
-				x: this.x/scale, y: this.y/scale,
-				radius: this.r
-			});
-		}
-	};
-
-	var c1 = new Circle(8, "blue");
-
-	var collision = function (obj1, obj2) {
-		var dx = obj2.x - obj1.x;
-		var dy = obj2.y - obj1.y;
-		var distance = Math.sqrt(dx*dx + dy*dy);
-		var surface = obj1.r + obj2.r;
-		
-		return distance < surface;
-	};
-
 	// 画面更新
 	var update = function update () {
 		fps.check();
 		$canvas.clearCanvas();
+
+		a1.draw();
 
 		// fps
 		$canvas.drawText({
@@ -146,13 +191,7 @@ $(function () {
 			text: "hold your finger"
 		});
 
-		if(collision(c1, f1)) {
-			c1.c = "red";
-		} else {
-			c1.c = "blue";
-		};
-
-		c1.draw();
+		r1.draw();
 
 		f1.draw();
 
