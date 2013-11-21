@@ -12,14 +12,40 @@
             body {
                 width: 100%;
                 height: 100%;
-            },
-            canvas {
-                width: 400px;
-                height: 300px;
+                margin: 0px;
+                padding: 0px;
+                text-align: center;
+            }
+            div.wrapper {
+                width: 80%;
+                margin: 0 auto;
+                text-align: left;
+            }
+            div.outframe {
+                position: relative;
+                z-index: 1;
+            }
+            div.inframe {
+                position: absolute;
+                left: 121px;
+                top: 106px;
+                z-index: 2;
+            }
+            div.inframe canvas {
+                position: absolute;
             }
         </style>
     </head>
     <body id="content">
-        <canvas id="canvas" width="400" height="300"></canvas>
+        <div class="wrapper">
+            <div class="outframe">
+                <img src="/images/ipad-FB.png" width="1040" height="825">
+                <div class="inframe">
+                    <canvas id="layer0" width="400" height="300" style="z-index: 0;"></canvas>
+                    <canvas id="layer1" width="400" height="300" style="z-index: 1;"></canvas>
+                    <canvas id="layer2" width="400" height="300" style="z-index: 2;"></canvas>
+                    <canvas id="layer3" width="400" height="300" style="z-index: 3;"></canvas>
+                </div>
+        </div>
     </body>
 </html>
