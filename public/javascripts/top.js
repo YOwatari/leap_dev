@@ -26,17 +26,17 @@ $(function () {
 
 	var fps = new FPS(30);
 
-	// canvas
-	var Layers = [];
-	Layers.push($("canvas#layer0"));
-	Layers.push($("canvas#layer1"));
-	Layers.push($("canvas#layer2"));
-	Layers.push($("canvas#layer3"));
+	// 各種レイヤー
+	var CanvasLayers = [];
+	CanvasLayers.push($("canvas#layer0"));
+	CanvasLayers.push($("canvas#layer1"));
+	CanvasLayers.push($("canvas#layer2"));
+	CanvasLayers.push($("canvas#layer3"));
 
 	// retina対応
-	var scale = 1;
+	var	SCALE = 1;
 	if (window.devicePixelRatio == 2) {
-		$.each(Layers, function (index, value) {
+		$.each(CanvasLayers, function (index, value) {
 			value.attr({
 				width: 800,
 				height: 600
@@ -47,17 +47,28 @@ $(function () {
 			});
 		});
 		
-		scale = 2;
+		SCALE  = 2;
 	}
 
 	// 画面領域
-	var canvasX = Layers[0].width();
-	var canvasY = Layers[0].height();
+	var canvasX = CanvasLayers[0].width();
+	var canvasY = CanvasLayers[0].height();
 	var centerX = canvasX / 2;
 	var centerY = canvasY / 2;
 
-	var NEXT = false;
-	var nextGame = false;
+	// シーン状態
+	var Scene = [
+		"Title",
+		"Game1",
+		"Quiz1",
+		"Game2",
+		"Game3",
+		"Quiz2",
+		"End"
+	];
+
+	// 現状態
+	var State = Scene[0];
 
 	// 指
 	var Finger = function () {
@@ -69,7 +80,7 @@ $(function () {
 		draw: function (layer) {
 			layer.drawArc({
 				fillStyle: "green",
-				x: this.x/scale, y: this.y/scale,
+				x: this.x/SCALE, y: this.y/SCALE,
 				radius: this.r
 			});
 		}
@@ -88,7 +99,7 @@ $(function () {
 			layer.drawArc({
 				strokeStyle: this.collision() ? "red" : this.c,
 				strokeWidth: 4,
-				x: this.x/scale, y: this.y/scale,
+				x: this.x/SCALE, y: this.y/SCALE,
 				radius: this.r
 			});
 		},
@@ -123,17 +134,17 @@ $(function () {
 		draw: function (layer) {
 			layer.drawRect({
 				fillStyle: this.c,
-				x: (this.x - canvasX*0.25/4)/scale,
-				y: (this.y - canvasX*0.25/4)/scale,
-				width: canvasX/scale*0.25, height: canvasY/scale*0.1,
+				x: (this.x - canvasX*0.25/4)/SCALE,
+				y: (this.y - canvasX*0.25/4)/SCALE,
+				width: canvasX/SCALE*0.25, height: canvasY/SCALE*0.1,
 				rotate: this.r,
 				cornerRadius: 10
 			})
 			.drawRect({
 				fillStyle: this.c,
-				x: (this.x - canvasX*0.25/4)/scale,
-				y: (this.y + canvasX*0.25/4)/scale,
-				width: canvasX/scale*0.25, height: canvasY/scale*0.1,
+				x: (this.x - canvasX*0.25/4)/SCALE,
+				y: (this.y + canvasX*0.25/4)/SCALE,
+				width: canvasX/SCALE*0.25, height: canvasY/SCALE*0.1,
 				rotate: -this.r,
 				cornerRadius: 10
 			});
@@ -175,7 +186,7 @@ $(function () {
 		draw: function (layer) {
 			layer.drawArc({
 				fillStyle: this.c,
-				x: this.x/scale, y: this.y/scale,
+				x: this.x/SCALE, y: this.y/SCALE,
 				radius: this.radius
 			});
 
@@ -205,17 +216,17 @@ $(function () {
 		draw: function (layer) {
 			layer.drawRect({
 				fillStyle: this.c,
-				x: centerX/scale,
+				x: centerX/SCALE,
 				y: 0,
-				width: this.wL/scale, height: canvasY/scale,
+				width: this.wL/SCALE, height: canvasY/SCALE,
 				fromCenter: false
 			});
 
 			layer.drawRect({
 				fillStyle: this.c,
-				x: centerX/scale,
+				x: centerX/SCALE,
 				y: 0,
-				width: this.wR/scale, height: canvasY/scale,
+				width: this.wR/SCALE, height: canvasY/SCALE,
 				fromCenter: false
 			});
 
@@ -231,38 +242,110 @@ $(function () {
 		}
 	};
 
+	// 指ポインタ
 	var f1 = new Finger();
-	var r1 = new Ring(centerX-150, centerY+25, 10, "blue", f1);
-	var r2 = new Ring(centerX+150, centerY+25, 10, "green", f1);
 
-	var aR1 = new Arrow(0, canvasY/4, "blue", "right");
-	var aR2 = new Arrow(-canvasX*1/4, canvasY/4, "blue", "right");
-	var aR3 = new Arrow(-canvasX*2/4, canvasY/4, "blue", "right");
-	var aR4 = new Arrow(-canvasX*3/4, canvasY/4, "blue", "right");
+	var TitleScene = function () {
+		this.r1 = new Ring(centerX-150, centerY+25, 10, "blue", f1);
+		this.r2 = new Ring(centerX+150, centerY+25, 10, "green", f1);
 
-	var aL1 = new Arrow(canvasX, canvasY*3/4, "red", "left");
-	var aL2 = new Arrow(canvasX + canvasX*1/4, canvasY*3/4, "red", "left");
-	var aL3 = new Arrow(canvasX + canvasX*2/4, canvasY*3/4, "red", "left");
-	var aL4 = new Arrow(canvasX + canvasX*3/4, canvasY*3/4, "red", "left");
+		this.aR1 = new Arrow(0, canvasY/4, "blue", "right");
+		this.aR2 = new Arrow(-canvasX*1/4, canvasY/4, "blue", "right");
+		this.aR3 = new Arrow(-canvasX*2/4, canvasY/4, "blue", "right");
+		this.aR4 = new Arrow(-canvasX*3/4, canvasY/4, "blue", "right");
 
-	var colors = [
-		"#ffc6c6",
-		"#ffc6e2",
-		"#ffc6ff",
-		"#e2c6ff",
-		"#c6c6ff",
-		"#c6e2ff",
-		"#c6ffff",
-		"#c6ffe2",
-		"#c6ffc6",
-		"#e2ffc6",
-		"#ffffc6",
-		"#ffe2c6"
-	];
-	var circle = $.map(colors, function (value, index) {
-		return new Arc(value);
-	});
-	var curtain = new Curtain();
+		this.aL1 = new Arrow(canvasX, canvasY*3/4, "red", "left");
+		this.aL2 = new Arrow(canvasX + canvasX*1/4, canvasY*3/4, "red", "left");
+		this.aL3 = new Arrow(canvasX + canvasX*2/4, canvasY*3/4, "red", "left");
+		this.aL4 = new Arrow(canvasX + canvasX*3/4, canvasY*3/4, "red", "left");
+
+		this.colors = [
+			"#ffc6c6",
+			"#ffc6e2",
+			"#ffc6ff",
+			"#e2c6ff",
+			"#c6c6ff",
+			"#c6e2ff",
+			"#c6ffff",
+			"#c6ffe2",
+			"#c6ffc6",
+			"#e2ffc6",
+			"#ffffc6",
+			"#ffe2c6"
+		];
+		this.circle = $.map(this.colors, function (value, index) {
+			return new Arc(value);
+		});
+		this.curtain = new Curtain();
+	};
+	TitleScene.prototype = {
+		update: function () {
+			this.layer0();
+			this.layer1();
+			this.layer2();
+			this.layer3();
+		},
+		layer0: function () {
+			for (var i = this.circle.length - 1; i >= 0; i--) {
+				this.circle[i].draw(CanvasLayers[0]);
+			};
+
+			CanvasLayers[0].drawRect({
+				fillStyle: "rgba(255,255,255,0.7)",
+				x: centerX/SCALE,
+				y: centerY/SCALE,
+				width: 0.9*canvasX/SCALE, height: 0.9*canvasY/SCALE,
+				cornerRadius: 10
+			})
+		},
+		layer1: function () {
+			// sub title
+			CanvasLayers[1].drawText({
+				fillStyle: "black",
+				fontStyle: "bold",
+				fontSize: "8pt",
+				x: 0.75*centerX/SCALE, y: (centerY-150)/SCALE,
+				text: "瞬間バディパーティゲーム"
+			});
+
+			// title
+			CanvasLayers[1].drawText({
+				fillStyle: "black",
+				fontStyle: "bold",
+				fontSize: "30pt",
+				x: centerX/SCALE, y: (centerY-100)/SCALE,
+				text: "ユビフレ"
+			});
+
+			// start
+			CanvasLayers[1].drawText({
+				fillStyle: "black",
+				fontStyle: "bold",
+				fontSize: "15pt",
+				x: centerX/SCALE, y: (centerY+150)/SCALE,
+				text: "hold your finger and slide"
+			});
+		},
+		layer2: function () {
+			this.r1.draw(CanvasLayers[2]);
+			this.r2.draw(CanvasLayers[2]);
+
+			//aR1.draw();
+			//aR2.draw();
+			//aR3.draw();
+			//aR4.draw();
+
+			//aL1.draw();
+			//aL2.draw();
+			//aL3.draw();
+			//aL4.draw();
+		},
+		layer3: function () {
+			f1.draw(CanvasLayers[3]);
+		}
+	};
+
+	var tScene = new TitleScene();
 
 	// Laep Motion
 	Leap.loop(function (frame) {
@@ -272,96 +355,46 @@ $(function () {
 		}
 	});
 
-	var Layer0Update = function L0Update () {
-		for (var i = circle.length - 1; i >= 0; i--) {
-			circle[i].draw(Layers[0]);
-		};
-
-		Layers[0].drawRect({
-			fillStyle: "rgba(255,255,255,0.7)",
-			x: centerX/scale,
-			y: centerY/scale,
-			width: 0.9*canvasX/scale, height: 0.9*canvasY/scale,
-			cornerRadius: 10
-		})
-	};
-
-	var Layer1Update = function L1Update () {
-		// sub title
-		Layers[1].drawText({
-			fillStyle: "black",
-			fontStyle: "bold",
-			fontSize: "8pt",
-			x: 0.75*centerX/scale, y: (centerY-150)/scale,
-			text: "瞬間バディパーティゲーム"
-		});
-
-		// title
-		Layers[1].drawText({
-			fillStyle: "black",
-			fontStyle: "bold",
-			fontSize: "30pt",
-			x: centerX/scale, y: (centerY-100)/scale,
-			text: "ユビフレ"
-		});
-
-		// start
-		Layers[1].drawText({
-			fillStyle: "black",
-			fontStyle: "bold",
-			fontSize: "15pt",
-			x: centerX/scale, y: (centerY+150)/scale,
-			text: "hold your finger and slide"
-		});
-	};
-
-	var Layer2Update = function L2Update () {
-		r1.draw(Layers[2]);
-		r2.draw(Layers[2]);
-
-		//aR1.draw();
-		//aR2.draw();
-		//aR3.draw();
-		//aR4.draw();
-
-		//aL1.draw();
-		//aL2.draw();
-		//aL3.draw();
-		//aL4.draw();
-	};
-
-	var Layer3Update = function L3Update () {
-		f1.draw(Layers[3]);
-	};
-	Layers[3].bind("click", function(){
-		NEXT = true;
-	});
-
-
 	// 画面更新
 	var update = function update () {
 		fps.check();
 
-		$.each(Layers, function (index, value) {
+		$.each(CanvasLayers, function (index, value) {
 			value.clearCanvas();
 		});
 
-		Layer0Update();
-		Layer1Update();
-		Layer2Update();
-		Layer3Update();
-
-		if (NEXT)
-			curtain.draw(Layers[2]);
-		
+		switch (State) {
+			case Scene[0]:
+				// タイトル
+				tScene.update();
+				break;
+			case Scene[1]:
+				// ゲーム1
+				break;
+			case Scene[2]:
+				// クイズ1
+				break;
+			case Scene[3]:
+				// ゲーム2
+				break;
+			case Scene[4]:
+				// ゲーム3
+				break;
+			case Scene[5]:
+				// クイズ2
+				break;
+			case Scene[6]:
+				// エンド
+				break;
+		}
 
 		// fps
-		Layers[3].drawText({
+		CanvasLayers[3].drawText({
 			fillStyle: "black",
 			fontStyle: "bold",
 			fontSize: "5pt",
 			align: "left",
-			x: (canvasX)/scale*0.1, y: (canvasY/scale)*0.05,
+			x: (canvasX)/SCALE*0.1, y: (canvasY/SCALE)*0.05,
 			text: "FPS: " + fps.getFPS()
 				+ "\nf: " +  ("00"+(f1.x)).slice(-3) + " " + ("00"+(f1.y)).slice(-3)
 		});
@@ -369,11 +402,5 @@ $(function () {
 		setTimeout(update, fps.getInterval());
 	};
 
-	var nextUpdate = update();
-
-	if (!nextGame) {
-		update();
-	} else {
-		nextUpdate();
-	}
+	update();
 });
