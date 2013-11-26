@@ -4,16 +4,18 @@
  */
 
 var express = require('express');
+var routes = require('./routes');
+var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
 
 var app = express();
 var server = http.createServer(app);
-var io = require('socket.io').listen(server);
+// var io = require('socket.io').listen(server);
 
 // all environments
 app.configure(function () {
-	app.set('port', process.env.PORT);
+	app.set('port', process.env.PORT || 3000);
 	app.set('views', path.join(__dirname, 'views'));
 	app.set('view engine', 'ejs');
 	app.use(express.favicon());
@@ -29,7 +31,7 @@ if ('development' == app.get('env')) {
 	app.use(express.errorHandler());
 }
 
-// socket.io
+/*// socket.io
 io.sockets.on('connection', function (client) {
 	console.log('Connection')
 	client.on('message', function (data) {
@@ -39,14 +41,9 @@ io.sockets.on('connection', function (client) {
 	return client.on('disconnect', function () {
 		return console.log('Disconnect');
 	});
-});
+});*/
 
-app.get('/', function (req, res) {
-	res.render('index', {
-		title: 'leap_dev'
-	});
-});
+app.get('/', routes.index);
+app.get('/users', user.list);
 
-if (!module.parent) {
-	server.listen(app.get('port'), process.env.IP);
-}
+server.listen(app.get('port'), process.env.IP);
