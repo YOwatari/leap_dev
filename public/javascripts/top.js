@@ -68,7 +68,7 @@ $(window).load(function () {
 	];
 
 	// 現状態
-	var sIndex = 4;
+	var sIndex = 0;
 	var State = Scene[sIndex];
 
 	// 指
@@ -377,9 +377,6 @@ $(window).load(function () {
 
 			if (this.end) {
 				this.curtain.draw(CanvasLayers[2]);
-				if (this.curtain.mode == true) {
-
-				};
 			}	
 
 			//aR1.draw();
@@ -395,23 +392,28 @@ $(window).load(function () {
 	};
 
     // 間違い箇所
-    var Difference = function (x, y, r, target) {
+    var Difference = function (x, y, r) {
         this.x = x;
         this.y = y;
         this.r = r;
-        this.target = target;
         this.visible = false;
         this.audio = new Audio("/audio/correct.mp3");
     };
     Difference.prototype = {
         collision: function () {
         	var x = this.x < 0 ? -1*this.x*(centerX/698)/SCALE : (centerX + this.x*(centerX/698))/SCALE;
-            var dx = this.target.x/SCALE - x;
-            var dy = this.target.y/SCALE - ((centerY/2 + 1*this.y*(centerY/524))/SCALE);
-            var distance = Math.sqrt(dx*dx + dy*dy);
-            var surface = this.r + this.target.r;
 
-            return  distance < surface;
+            var dxL = f1.x/SCALE - x;
+            var dyL = f1.y/SCALE - ((centerY/2 + 1*this.y*(centerY/524))/SCALE);
+            var distanceL = Math.sqrt(dxL*dxL + dyL*dyL);
+            var surfaceL = this.r + f1.r;
+
+            var dxR = f2.x/SCALE - x;
+            var dyR = f2.y/SCALE - ((centerY/2 + 1*this.y*(centerY/524))/SCALE);
+            var distanceR = Math.sqrt(dxR*dxR + dyR*dyR);
+            var surfaceR = this.r + f2.r;
+
+            return  distanceL < surfaceL || distanceR < surfaceR ;
         }, 
         draw: function (layer) {
             layer.drawArc({
@@ -515,15 +517,19 @@ $(window).load(function () {
 
         this.timeup = false;
         this.Score = 0;
-        setTimeout(function (e) {
-        	e.timeup = true;
-        }, 20*1000, this);
+        this.count = 0;
     };
     DifferenceScene.prototype = {
         update: function () {
             this.layer0();
             this.layer1();
             this.layer2();
+
+            if(this.count < 15*fps.target) {
+            	this.count++;
+            } else {
+            	this.timeup = true;
+            }
         },
         layer0: function () {
         	this.PicLeft.draw(CanvasLayers[0]);
@@ -638,7 +644,7 @@ $(window).load(function () {
 						strokeStyle: "black",
 						strokeWidth: 1,
 						x: canvasW*3/16/SCALE, y: canvasH/6/SCALE,
-						fontSize: 36,
+						fontSize: 30,
 						text: this.charL
 					});
 					// 左側 画像
@@ -664,7 +670,7 @@ $(window).load(function () {
 					    strokeStyle: "black",
 					    strokeWidth: 1,
 					    x: canvasW*13/16/SCALE, y: canvasH/6/SCALE,
-					    fontSize: 36,
+					    fontSize: 30,
 					    text: this.charR
 					});
 					// 右側 画像
@@ -700,7 +706,7 @@ $(window).load(function () {
 					// 右側 画像
 					CanvasLayers[1].drawImage({
 					    source: this.ImgSrcR,
-					    x: this.result==this.results[2] ? (this.right - ((this.right-centerX/2)*this.count/this.speed))/SCALE : this.right/SCALE,
+					    x: this.result==this.results[2] ? (this.right - ((this.right-(centerX-this.left/2))*this.count/this.speed))/SCALE : this.right/SCALE,
 					    y: canvasH*3/8/SCALE,
 					    width: this.left/SCALE,
 					    height: canvasH*7/12/SCALE,
@@ -770,7 +776,7 @@ $(window).load(function () {
     };
 
     var QuizScene = function () {
-		this.quizzes = []
+		this.quizzes = new Array();
 		for (i = 0; i < arguments.length; i++) {
     		this.quizzes.push(arguments[i]);
   		}
@@ -830,7 +836,7 @@ $(window).load(function () {
 
 		this.stage = 0;
 
-		this.ClockQuizzes = []
+		this.ClockQuizzes = new Array();
 		for (i = 0; i < arguments.length; i++) {
     		this.ClockQuizzes.push(arguments[i]);
   		}
@@ -867,14 +873,216 @@ $(window).load(function () {
 				this.curtain.draw(CanvasLayers[2]);
 			}
 		}
-
     };
 
-	var quiz1 = new Quiz("どっちが好き？", "OK", "images/dog.jpg", "images/cat.jpg", "犬", "猫");
-	var quiz2 = new Quiz("好きなラーメンは？", "OK", "images/kotteri.jpg", "images/assari.jpg", "こってり", "あっさり");
-	var quiz3 = new Quiz("週末は？", "OK", "images/indoor.jpg", "images/outdoor.jpg", "インドア", "アウトドア");
-    var quiz4 = new Quiz("消したい過去が…", "OK", "images/yes.jpg", "images/no.jpeg", "ある", "ない");
-    var quiz5 = new Quiz("付き合うなら？", "OK", "images/ue.jpg", "images/sita.jpg", "年上", "年下");
+    var Card = function (x, y, ImgSrc) {
+    	this.x = x;
+    	this.y = y;
+
+    	this.cardW = canvasW*1/4;
+		this.cardH = canvasH*1/4;
+		this.r = (this.cardW+this.cardH)/4;
+
+    	this.ImgSrc = ImgSrc;
+    };
+    Card.prototype = {
+    	collision: function () {
+		    var dx1 = f1.x - this.x;
+		    var dy1 = f1.y - this.y;
+		    var dx2 = f2.x - this.x;
+		    var dy2 = f2.y - this.y;
+
+		    var distance1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+		    var surface1 = this.r + f1.r;
+		    var distance2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+		    var surface2 = this.r + f2.r;
+
+		    return distance1 < surface1 && distance2 < surface2;
+    	},
+    	draw: function (rotate) {
+    		CanvasLayers[1].drawImage({
+    			source: this.ImgSrc,
+			    x: this.x/SCALE, y: this.y/SCALE,
+			    width: this.cardW/SCALE,
+			    height: this.cardH/SCALE,
+			    rotate: rotate,
+			    fromCenter: true
+    		});
+    	}
+    };
+
+    var Karuta = function (title, question, CardsSrc, CorrectNum) {
+    	this.title = title;
+    	this.question = question;
+
+    	this.cardRotate = [
+    		20,-5,-10,-20,-5
+    	];
+
+    	this.cards = new Array();
+    	this.cards.push(new Card(canvasW*2/10, canvasH*2.5/6, CardsSrc[0]));
+    	this.cards.push(new Card(canvasW*5.2/10, canvasH*2.5/6, CardsSrc[1]));
+    	this.cards.push(new Card(canvasW*8.5/10, canvasH*2.8/6, CardsSrc[2]));
+    	this.cards.push(new Card(canvasW*3/10, canvasH*4.8/6, CardsSrc[3]));
+    	this.cards.push(new Card(canvasW*7/10, canvasH*5/6, CardsSrc[4]));
+
+    	this.correct = CorrectNum;
+    	this.audio = new Audio("/audio/correct.mp3");
+
+    	this.time = 8*fps.target;
+    	this.end = false;
+    	this.good = false;
+    };
+    Karuta.prototype = {
+    	check: function () {
+    		if (this.cards[this.correct].collision()) {
+    			this.end = true;
+    			this.good = true;
+    			this.audio.play();
+    		}
+    	},
+    	draw: function () {
+    		// 背景
+    		CanvasLayers[0].drawRect({
+    			fillStyle: "#EEE",
+    			x: 0, y: 0,
+    			width: canvasW/SCALE, height: canvasH/SCALE,
+    			fromCenter: false
+    		});
+
+    		// カルタの表示
+    		if (this.time < 7*fps.target) {
+    			CanvasLayers[1].drawRect({
+	    			fillStyle: "#FFA",
+	    			x: 0, y: canvasH/6/SCALE,
+	    			width: canvasW/SCALE, height: canvasH/SCALE,
+	    			fromCenter: false
+	    		});
+
+	    		var self = this;
+	    		$.each(self.cards, function(index, val) {
+	    			val.draw(self.cardRotate[index]);
+	    		});
+    		}
+    		
+    		// タイマー部分
+    		CanvasLayers[2].drawArc({
+    			layer: true,
+    			fillStyle: "#FFCC66",
+    			x: canvasW*3/16/SCALE, y: canvasH/12/SCALE,
+    			radius: canvasH/14/SCALE
+    		});
+    		CanvasLayers[2].drawText({
+    			fillStyle: "black",
+    			fontSize: "18",
+    			x: canvasW*3/16/SCALE, y: canvasH/12/SCALE,
+    			text: this.time < 6*fps.target ? Math.floor(this.time/fps.target) : "start"
+    		});
+
+    		// お題部分
+    		if (this.question) {
+    			CanvasLayers[2].drawImage({
+	    			source: this.question,
+				    x: (centerX-canvasW*3/20)/SCALE, y: canvasH/12/SCALE,
+				    width: canvasW*3/20/SCALE,
+				    height: canvasH*3/20/SCALE
+				});
+    		} 		
+    		CanvasLayers[2].drawText({
+    			fillStyle: "black",
+    			fontSize: "20",
+    			x: centerX/SCALE, y: canvasH/12/SCALE,
+    			text: this.title,
+    			align: this.question ? "left" : "center"
+    		});
+    	},
+    	update: function () {
+    		this.check();
+    		this.draw();
+
+    		if (this.time == 0)
+    			this.end = true;
+    		this.time--;
+    	}
+    }
+
+    var KarutaScene = function () {
+    	this.stage = 0;
+
+    	this.Karutas = [];
+		for (i = 0; i < arguments.length; i++) {
+    		this.Karutas.push(arguments[i]);
+  		}
+
+  		this.curtain = new Curtain(false);
+  		this.count = 0;
+    };
+    KarutaScene.prototype = {
+    	draw: function () {
+    		if (this.count < 3*fps.target) {
+    			var score = $.grep(this.Karutas, function(el, index){
+    				return el.good;
+    			}).length;
+    			CanvasLayers[0].drawRect({
+	    			fillStyle: "#FAF",
+	    			x: 0, y: 0,
+	    			width: canvasW/SCALE, height: canvasH/SCALE,
+	    			fromCenter: false
+	    		});
+	    		CanvasLayers[1].drawText({
+	    			fillStyle: "black",
+	    			fontSize: "40",
+	    			x: centerX/SCALE, y: centerY/SCALE,
+	    			text: "正解数は，" + score + " です．"
+	    		});
+    		} else {
+    			this.curtain.draw(CanvasLayers[2]);
+    		}
+    	},
+    	update: function () {
+    		if (this.stage < this.Karutas.length) {
+    			this.Karutas[this.stage].update();
+    			if (this.Karutas[this.stage].end)
+	    			this.stage++;
+    		} else {
+    			this.draw();
+    			this.count++;
+    		}
+    	}
+    };
+
+    var Cards1Src = [
+		"/images/marucheese.jpg",
+		"/images/pomeranian.jpg",
+		"/images/poodle.jpg",
+		"/images/shepard.jpg",
+		"/images/tiwawa.jpg"
+    ];
+    var Cards2Src = [
+		"/images/ireland.jpg",
+		"/images/italy.jpg",
+		"/images/canada.jpg",
+		"/images/iran.jpg",
+		"/images/indonesia.jpg"
+    ];
+    var Cards3Src = [
+    	"/images/sake(kanji).jpg",
+		"/images/hirame(kanji).jpg",
+		"/images/katsuo(kanji).jpg",
+		"/images/karei(kanji).jpg",
+		"/images/tai(kanji).jpg"
+    ];
+
+    var karuta1 = new Karuta("プードルはどれ？", null, Cards1Src, 2);
+    var karuta2 = new Karuta("アイルランドはどれ？", null, Cards2Src, 0);
+    var karuta3 = new Karuta("   はどれ？", "/images/hirame.jpg", Cards3Src, 1);
+    var kScene = new KarutaScene(karuta1, karuta2, karuta3);
+
+	var quiz1 = new Quiz("どっちが好き？", "OK", "/images/dog.jpg", "images/cat.jpg", "犬", "猫");
+	var quiz2 = new Quiz("好きなラーメンは？", "OK", "/images/kotteri.jpg", "images/assari.jpg", "こってり", "あっさり");
+	var quiz3 = new Quiz("週末は？", "OK", "/images/indoor.jpg", "images/outdoor.jpg", "インドア", "アウトドア");
+    var quiz4 = new Quiz("消したい過去が…", "OK", "/images/yes.jpg", "images/no.jpeg", "ある", "ない");
+    var quiz5 = new Quiz("付き合うなら？", "OK", "/images/ue.jpg", "images/sita.jpg", "年上", "年下");
     var q1Scene = new QuizScene(quiz1, quiz2);
     var q2Scene = new QuizScene(quiz3, quiz4, quiz5);
 
@@ -930,12 +1138,7 @@ $(window).load(function () {
 				break;
 			case Scene[4]:
 				// ゲーム3
-				CanvasLayers[2].drawText({
-				    fillStyle: "black",
-				    x: centerX/SCALE, y: centerY/SCALE,
-				    fontSize: 50,
-				    text: "＞未実装＜"
-				});
+				kScene.update();
 				break;
 			case Scene[5]:
 				// クイズ2
